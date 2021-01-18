@@ -11,6 +11,11 @@ LOG = logging.getLogger(__name__)
 
 
 def find_by_name(pattern, exact=False):
+    '''Find an input device with name matching `pattern`.
+
+    On success, returns a single evdev.InputDevice. Raises
+    KeyError if there are no matching devices, or ValueError
+    if there is more than one matching device.'''
     matches = []
     for name in evdev.list_devices():
         dev = evdev.InputDevice(name)
@@ -45,6 +50,7 @@ def main(verbose):
 
 @main.command(name='list')
 def list_devices():
+    '''List avaiable input devices'''
     for i, name in enumerate(evdev.list_devices()):
         dev = evdev.InputDevice(name)
         print(f'[{i}] {dev.name} ({dev.path})')
@@ -54,6 +60,15 @@ def list_devices():
 @click.option('--pass', '-p', 'pass_when_locked', multiple=True)
 @click.argument('patterns', nargs=-1)
 def run(patterns, pass_when_locked):
+    '''Lock input devices when key sequence is received.
+
+    Grabs the input devices listed on the command line. Proxies
+    events to the input subsystem until ALT-F12 is received. Resumes
+    proxying events after receiving another ALT-F12.
+
+    Use --pass <keycode> to have specific keycodes passed even when
+    in lock mode.'''
+
     devices = []
     for pattern in patterns:
         if pattern.startswith('/'):
